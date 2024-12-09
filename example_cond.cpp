@@ -22,6 +22,8 @@
 #include <queue>
 #include "co_routine.h"
 using namespace std;
+
+// 展示下条件变量使用
 struct stTask_t
 {
 	int id;
@@ -31,6 +33,7 @@ struct stEnv_t
 	stCoCond_t* cond;
 	queue<stTask_t*> task_queue;
 };
+
 void* Producer(void* args)
 {
 	co_enable_hook_sys();
@@ -47,6 +50,7 @@ void* Producer(void* args)
 	}
 	return NULL;
 }
+
 void* Consumer(void* args)
 {
 	co_enable_hook_sys();
@@ -65,6 +69,7 @@ void* Consumer(void* args)
 	}
 	return NULL;
 }
+
 int main()
 {
 	stEnv_t* env = new stEnv_t;

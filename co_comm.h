@@ -15,6 +15,7 @@ class clsCoMutex {
   int m_iWaitItemCnt;
 };
 
+// RAII lock
 class clsSmartLock {
  public:
   clsSmartLock(clsCoMutex* m) {

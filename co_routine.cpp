@@ -51,7 +51,7 @@ struct stCoEpoll_t;
 struct stCoRoutineEnv_t
 {
 	stCoRoutine_t *pCallStack[ 128 ];
-	int iCallStackSize;
+	int iCallStackSize;			// 执行的协程数量
 	stCoEpoll_t *pEpoll;
 
 	//for copy stack log lastco and nextco
@@ -325,6 +325,8 @@ struct stCoEpoll_t
 };
 typedef void (*OnPreparePfn_t)( stTimeoutItem_t *,struct epoll_event &ev, stTimeoutItemLink_t *active );
 typedef void (*OnProcessPfn_t)( stTimeoutItem_t *);
+
+// 超时节点
 struct stTimeoutItem_t
 {
 
@@ -339,10 +341,10 @@ struct stTimeoutItem_t
 	unsigned long long ullExpireTime;
 
 	OnPreparePfn_t pfnPrepare;
-	OnProcessPfn_t pfnProcess;
+	OnProcessPfn_t pfnProcess;		// 超时方法
 
-	void *pArg; // routine 
-	bool bTimeout;
+	void *pArg; // routine 			// 超时方法的参数
+	bool bTimeout;					// 是否为超时节点
 };
 struct stTimeoutItemLink_t
 {
@@ -518,6 +520,10 @@ struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAt
 	return lp;
 }
 
+// 创建一个协程
+/**
+ * @param stCoRoutine_t **ppco	二级指针用于返回 stCoRoutine_t*
+ */
 int co_create( stCoRoutine_t **ppco,const stCoRoutineAttr_t *attr,pfn_co_routine_t pfn,void *arg )
 {
 	if( !co_get_curr_thread_env() ) 
@@ -558,13 +564,16 @@ void co_swap(stCoRoutine_t* curr, stCoRoutine_t* pending_co);
 void co_resume( stCoRoutine_t *co )
 {
 	stCoRoutineEnv_t *env = co->env;
+	// 获取该线程正在运行的协程
 	stCoRoutine_t *lpCurrRoutine = env->pCallStack[ env->iCallStackSize - 1 ];
 	if( !co->cStart )
 	{
+		// cStart 没标记运行
 		coctx_make( &co->ctx,(coctx_pfn_t)CoRoutineFunc,co,0 );
 		co->cStart = 1;
 	}
 	env->pCallStack[ env->iCallStackSize++ ] = co;
+	// 协程切换
 	co_swap( lpCurrRoutine, co );
 
 
@@ -789,7 +798,7 @@ void OnPollPreparePfn( stTimeoutItem_t * ap,struct epoll_event &e,stTimeoutItemL
 	}
 }
 
-
+// 事件循环
 void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 {
 	if( !ctx->result )
@@ -835,10 +844,11 @@ void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 
 		Join<stTimeoutItem_t,stTimeoutItemLink_t>( active,timeout );
 
+		// Active节点执行
 		lp = active->head;
 		while( lp )
 		{
-
+			// 移除首个节点
 			PopHead<stTimeoutItem_t,stTimeoutItemLink_t>( active );
             if (lp->bTimeout && now < lp->ullExpireTime) 
 			{
@@ -850,6 +860,7 @@ void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 					continue;
 				}
 			}
+			// 执行回调方法
 			if( lp->pfnProcess )
 			{
 				lp->pfnProcess( lp );
@@ -904,6 +915,8 @@ stCoRoutine_t *GetCurrCo( stCoRoutineEnv_t *env )
 {
 	return env->pCallStack[ env->iCallStackSize - 1 ];
 }
+
+// 获取线程当前执行的协程
 stCoRoutine_t *GetCurrThreadCo( )
 {
 	stCoRoutineEnv_t *env = co_get_curr_thread_env();
@@ -1105,20 +1118,27 @@ struct stCoCondItem_t
 
 	stTimeoutItem_t timeout;
 };
+
+// 条件变量
 struct stCoCond_t
 {
+	// 看上去是个包含头节点 + 尾节点的 链表
 	stCoCondItem_t *head;
 	stCoCondItem_t *tail;
 };
 static void OnSignalProcessEvent( stTimeoutItem_t * ap )
 {
 	stCoRoutine_t *co = (stCoRoutine_t*)ap->pArg;
+	// 唤醒协程
 	co_resume( co );
 }
 
 stCoCondItem_t *co_cond_pop( stCoCond_t *link );
+
+// 条件变量唤醒
 int co_cond_signal( stCoCond_t *si )
 {
+	// 从stCoCond_t链表 取出首个节点
 	stCoCondItem_t * sp = co_cond_pop( si );
 	if( !sp ) 
 	{
@@ -1126,6 +1146,7 @@ int co_cond_signal( stCoCond_t *si )
 	}
 	RemoveFromLink<stTimeoutItem_t,stTimeoutItemLink_t>( &sp->timeout );
 
+	// 加入激活列表
 	AddTail( co_get_curr_thread_env()->pEpoll->pstActiveList,&sp->timeout );
 
 	return 0;
@@ -1148,6 +1169,7 @@ int co_cond_broadcast( stCoCond_t *si )
 
 int co_cond_timedwait( stCoCond_t *link,int ms )
 {
+	// 创建一个超时链表节点，看起来这个链表节点应该是用于回调唤醒
 	stCoCondItem_t* psi = (stCoCondItem_t*)calloc(1, sizeof(stCoCondItem_t));
 	psi->timeout.pArg = GetCurrThreadCo();
 	psi->timeout.pfnProcess = OnSignalProcessEvent;
@@ -1164,11 +1186,13 @@ int co_cond_timedwait( stCoCond_t *link,int ms )
 			return ret;
 		}
 	}
+	// 加入链表尾部
 	AddTail( link, psi);
 
+	// 协程挂起
 	co_yield_ct();
 
-
+	// 被唤醒后 直接移除该节点
 	RemoveFromLink<stCoCondItem_t,stCoCond_t>( psi );
 	free(psi);
 

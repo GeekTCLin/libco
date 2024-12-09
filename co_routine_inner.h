@@ -30,17 +30,17 @@ struct stCoSpec_t
 struct stStackMem_t
 {
 	stCoRoutine_t* occupy_co;
-	int stack_size;
-	char* stack_bp; //stack_buffer + stack_size
-	char* stack_buffer;
+	int stack_size;				// 栈字节长度
+	char* stack_bp; //stack_buffer + stack_size 栈底 高地址 - 低地址
+	char* stack_buffer;			// 栈空间
 
 };
 
 struct stShareStack_t
 {
-	unsigned int alloc_idx;
-	int stack_size;
-	int count;
+	unsigned int alloc_idx;		// 访问下标
+	int stack_size;				// 每个共享栈容量
+	int count;					// stack_array 数量
 	stStackMem_t** stack_array;
 };
 

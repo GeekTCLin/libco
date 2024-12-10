@@ -30,9 +30,10 @@
 
 #include <sys/epoll.h>
 
+// 对 epoll_event + size 长度的封装
 struct co_epoll_res
 {
-	int size;
+	int size;					// events数组 长度
 	struct epoll_event *events;
 	struct kevent *eventlist;
 };

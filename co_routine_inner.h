@@ -27,15 +27,17 @@ struct stCoSpec_t
 	void *value;
 };
 
+// 栈内存块
 struct stStackMem_t
 {
-	stCoRoutine_t* occupy_co;
+	stCoRoutine_t* occupy_co;	// 使用该空间的协程
 	int stack_size;				// 栈字节长度
-	char* stack_bp; //stack_buffer + stack_size 栈底 高地址 - 低地址
+	char* stack_bp; 			//stack_buffer + stack_size 栈底 高地址 - 低地址
 	char* stack_buffer;			// 栈空间
 
 };
 
+// 共享栈
 struct stShareStack_t
 {
 	unsigned int alloc_idx;		// 访问下标
@@ -45,7 +47,7 @@ struct stShareStack_t
 };
 
 
-
+// 协程
 struct stCoRoutine_t
 {
 	stCoRoutineEnv_t *env;
@@ -55,9 +57,9 @@ struct stCoRoutine_t
 
 	char cStart;
 	char cEnd;
-	char cIsMain;
+	char cIsMain;			// 是否为主协程
 	char cEnableSysHook;
-	char cIsShareStack;
+	char cIsShareStack;		// 是否使用共享栈
 
 	void *pvEnv;
 

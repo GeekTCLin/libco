@@ -48,6 +48,7 @@ using namespace std;
 stCoRoutine_t *GetCurrCo( stCoRoutineEnv_t *env );
 struct stCoEpoll_t;
 
+// 协程环境对象 static 维护
 struct stCoRoutineEnv_t
 {
 	stCoRoutine_t *pCallStack[ 128 ];
@@ -459,7 +460,7 @@ static int CoRoutineFunc( stCoRoutine_t *co,void * )
 }
 
 
-
+// 创建协程
 struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAttr_t* attr,
 		pfn_co_routine_t pfn,void *arg )
 {
@@ -526,6 +527,7 @@ struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAt
  */
 int co_create( stCoRoutine_t **ppco,const stCoRoutineAttr_t *attr,pfn_co_routine_t pfn,void *arg )
 {
+	// 如果 gCoEnvPerThread 未初始化，代表首个主协程未创建，先创建主协程
 	if( !co_get_curr_thread_env() ) 
 	{
 		co_init_curr_thread_env();
@@ -746,14 +748,17 @@ static short EpollEvent2Poll( uint32_t events )
 	return e;
 }
 
+// __thread 标识 每个线程都会拥有该变量的一个独立副本
 static __thread stCoRoutineEnv_t* gCoEnvPerThread = NULL;
 
 void co_init_curr_thread_env()
 {
+	// 创建env
 	gCoEnvPerThread = (stCoRoutineEnv_t*)calloc( 1, sizeof(stCoRoutineEnv_t) );
 	stCoRoutineEnv_t *env = gCoEnvPerThread;
 
 	env->iCallStackSize = 0;
+	// 创建主协程
 	struct stCoRoutine_t *self = co_create_env( env, NULL, NULL,NULL );
 	self->cIsMain = 1;
 

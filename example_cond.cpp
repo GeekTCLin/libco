@@ -60,7 +60,7 @@ void* Consumer(void* args)
 		if (env->task_queue.empty())
 		{
 			co_cond_timedwait(env->cond, -1);
-			continue;
+			//continue;
 		}
 		stTask_t* task = env->task_queue.front();
 		env->task_queue.pop();

@@ -33,6 +33,7 @@ void* RoutineFunc(void* args)
 	while (true)
 	{
 		char sBuff[128];
+		// 地址打印相同
 		sprintf(sBuff, "from routineid %d stack addr %p\n", *routineid, sBuff);
 
 		printf("%s", sBuff);

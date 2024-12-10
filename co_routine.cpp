@@ -344,7 +344,7 @@ struct stTimeoutItem_t
 	OnProcessPfn_t pfnProcess;		// 超时方法
 
 	void *pArg; // routine 			// 超时方法的参数
-	bool bTimeout;					// 是否为超时节点
+	bool bTimeout;					// 是否超时
 };
 struct stTimeoutItemLink_t
 {

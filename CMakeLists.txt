@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 project(libco)
 
 # This for mac osx only
@@ -8,7 +8,7 @@ set(CMAKE_MACOSX_RPATH 0)
 set(LIBCO_VERSION   0.5)
 
 # Set cflags
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -g -fno-strict-aliasing -O2 -Wall -export-dynamic -Wall -pipe  -D_GNU_SOURCE -D_REENTRANT -fPIC -Wno-deprecated -m64)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)
 
 # Use c and asm
 enable_language(C ASM)

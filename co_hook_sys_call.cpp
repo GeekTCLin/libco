@@ -55,8 +55,8 @@ struct rpchook_t
 	struct sockaddr_in dest; //maybe sockaddr_un;
 	int domain; //AF_LOCAL , AF_INET
 
-	struct timeval read_timeout;
-	struct timeval write_timeout;
+	struct timeval read_timeout;	// 读超时上限，协程等待时间后检测
+	struct timeval write_timeout;	// 写超时上限，协程等待时间后检测
 };
 static inline pid_t GetPid()
 {
@@ -101,6 +101,15 @@ typedef res_state (*__res_state_pfn_t)();
 typedef int (*__poll_pfn_t)(struct pollfd fds[], nfds_t nfds, int timeout);
 typedef int (*gethostbyname_r_pfn_t)(const char* __restrict name, struct hostent* __restrict __result_buf, char* __restrict __buf, size_t __buflen, struct hostent** __restrict __result, int* __restrict __h_errnop);
 
+/**
+ * static socket_pfn_t g_sys_socket_func 	= (socket_pfn_t)dlsym(RTLD_NEXT,"socket");
+ * from 文心一言
+ * 这行代码的作用是获取系统中socket函数的地址，并将其存储在一个函数指针变量中，以便后续可以调用这个原始的系统函数。
+ * 这种技术在需要拦截或修改系统函数行为时非常有用，比如在网络编程中为了添加额外的日志记录或安全检查
+ * 
+ * libco 这里将 read connect 等阻塞接口地址交由 g_sys_... 进行代理，上层服务依旧调用read函数，但此层提供的阻塞服务由协程进行替换
+ * 以此达到上层业务代码不更改，使得阻塞程序修改为非阻塞
+ */
 static socket_pfn_t g_sys_socket_func 	= (socket_pfn_t)dlsym(RTLD_NEXT,"socket");
 static connect_pfn_t g_sys_connect_func = (connect_pfn_t)dlsym(RTLD_NEXT,"connect");
 static close_pfn_t g_sys_close_func 	= (close_pfn_t)dlsym(RTLD_NEXT,"close");
@@ -217,6 +226,8 @@ static inline void free_by_fd( int fd )
 	return;
 
 }
+
+// 创建socket
 int socket(int domain, int type, int protocol)
 {
 	HOOK_SYS_FUNC( socket );
@@ -239,6 +250,7 @@ int socket(int domain, int type, int protocol)
 	return fd;
 }
 
+// listener accept
 int co_accept( int fd, struct sockaddr *addr, socklen_t *len )
 {
 	int cli = accept( fd,addr,len );
@@ -249,6 +261,8 @@ int co_accept( int fd, struct sockaddr *addr, socklen_t *len )
 	alloc_by_fd( cli );
 	return cli;
 }
+
+// client connect
 int connect(int fd, const struct sockaddr *address, socklen_t address_len)
 {
 	HOOK_SYS_FUNC( connect );
@@ -402,6 +416,7 @@ ssize_t write( int fd, const void *buf, size_t nbyte )
 		struct pollfd pf = { 0 };
 		pf.fd = fd;
 		pf.events = ( POLLOUT | POLLERR | POLLHUP );
+		// 注意这里poll 是协程挂起
 		poll( &pf,1,timeout );
 
 		writeret = g_sys_write_func( fd,(const char*)buf + wrotelen,nbyte - wrotelen );

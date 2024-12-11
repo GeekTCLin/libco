@@ -525,6 +525,8 @@ struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAt
 // 创建一个协程
 /**
  * @param stCoRoutine_t **ppco	二级指针用于返回 stCoRoutine_t*
+ * @param pfn 代理方法
+ * @param arg 代理方法入参
  */
 int co_create( stCoRoutine_t **ppco,const stCoRoutineAttr_t *attr,pfn_co_routine_t pfn,void *arg )
 {

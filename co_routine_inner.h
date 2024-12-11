@@ -53,21 +53,22 @@ struct stCoRoutine_t
 	stCoRoutineEnv_t *env;	// 所属线程环境env
 	pfn_co_routine_t pfn;	// 协程代理的方法体
 	void *arg;				// pfn 方法 参数
-	coctx_t ctx;
+	coctx_t ctx;			// 保存寄存器
 
 	char cStart;			// 是否运行 = 1 为运行
 	char cEnd;				// 是否结束 = 1 为已结束
 	char cIsMain;			// 是否为主协程
-	char cEnableSysHook;
+	char cEnableSysHook;	// 是否启用hook
 	char cIsShareStack;		// 是否使用共享栈
 
 	void *pvEnv;
 
 	//char sRunStack[ 1024 * 128 ];
-	stStackMem_t* stack_mem;
+	stStackMem_t* stack_mem;	// 协程栈
 
 
 	//save satck buffer while confilct on same stack_buffer;
+	// 这三个与 共享栈有空
 	char* stack_sp; 
 	unsigned int save_size;
 	char* save_buffer;

@@ -50,13 +50,13 @@ struct stShareStack_t
 // 协程
 struct stCoRoutine_t
 {
-	stCoRoutineEnv_t *env;
-	pfn_co_routine_t pfn;
-	void *arg;
+	stCoRoutineEnv_t *env;	// 所属线程环境env
+	pfn_co_routine_t pfn;	// 协程代理的方法体
+	void *arg;				// pfn 方法 参数
 	coctx_t ctx;
 
-	char cStart;
-	char cEnd;
+	char cStart;			// 是否运行 = 1 为运行
+	char cEnd;				// 是否结束 = 1 为已结束
 	char cIsMain;			// 是否为主协程
 	char cEnableSysHook;
 	char cIsShareStack;		// 是否使用共享栈

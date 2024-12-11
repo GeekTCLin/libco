@@ -450,6 +450,7 @@ static int CoRoutineFunc( stCoRoutine_t *co,void * )
 	{
 		co->pfn( co->arg );
 	}
+	// pfn 执行完毕，协程结束
 	co->cEnd = 1;
 
 	stCoRoutineEnv_t *env = co->env;

@@ -60,20 +60,20 @@ enum {
 
 //-------------
 // 64 bit
-// low | regs[0]: r15 |
-//    | regs[1]: r14 |
-//    | regs[2]: r13 |
-//    | regs[3]: r12 |
-//    | regs[4]: r9  |
-//    | regs[5]: r8  |
-//    | regs[6]: rbp |
-//    | regs[7]: rdi |
-//    | regs[8]: rsi |
+// low | regs[0]: r15 | // calle
+//    | regs[1]: r14 |  // calle
+//    | regs[2]: r13 |  // calle
+//    | regs[3]: r12 |  // calle
+//    | regs[4]: r9  |  // 第五个参数
+//    | regs[5]: r8  |  // 第六个参数
+//    | regs[6]: rbp |  // 栈底
+//    | regs[7]: rdi |  // 第一个参数
+//    | regs[8]: rsi |  // 第二个参数
 //    | regs[9]: ret |  //ret func addr
-//    | regs[10]: rdx |
-//    | regs[11]: rcx |
-//    | regs[12]: rbx |
-// hig | regs[13]: rsp |
+//    | regs[10]: rdx | // 第三个参数
+//    | regs[11]: rcx | // 第四个参数
+//    | regs[12]: rbx |   // calle
+// hig | regs[13]: rsp |  // 栈顶
 enum {
   kRDI = 7,
   kRSI = 8,
@@ -117,10 +117,10 @@ int coctx_make(coctx_t* ctx, coctx_pfn_t pfn, const void* s, const void* s1) {
 
   ctx->regs[kRSP] = sp;
 
-  ctx->regs[kRETAddr] = (char*)pfn;
+  ctx->regs[kRETAddr] = (char*)pfn;   // CoRoutineFunc
 
-  ctx->regs[kRDI] = (char*)s;
-  ctx->regs[kRSI] = (char*)s1;
+  ctx->regs[kRDI] = (char*)s;         // stCoRoutine_t *co
+  ctx->regs[kRSI] = (char*)s1;        // 0
   return 0;
 }
 

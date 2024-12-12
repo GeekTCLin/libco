@@ -153,3 +153,6 @@ if (update_occupy_co && update_pending_co &&
 	}
 }
 ```
+
+### 为什么要保存 caller 寄存器
+因为libco 要玩共享栈，当共享栈空间被切出去，所有数据都需要保存，所以caller 寄存器的内容也要保存，不然数据会丢失
